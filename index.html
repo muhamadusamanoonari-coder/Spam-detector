@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Spam Detector</title>
+    <style>
+        /* Clean, modern styling */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7f6; 
+            display: flex; 
+            justify-content: center; 
+            padding-top: 50px; 
+            margin: 0;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1); 
+            width: 100%; 
+            max-width: 500px; 
+            text-align: center; 
+        }
+        h2 { margin-top: 0; color: #333; }
+        p { color: #666; margin-bottom: 20px; }
+        
+        textarea { 
+            width: 100%; 
+            height: 150px; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            margin-bottom: 15px; 
+            resize: vertical; 
+            box-sizing: border-box; 
+            font-family: inherit;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+        }
+
+        button { 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 12px 20px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            width: 100%; 
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0056b3; }
+        
+        /* Result Box Styling */
+        #result { 
+            margin-top: 20px; 
+            font-weight: bold; 
+            font-size: 16px; 
+            padding: 15px; 
+            border-radius: 6px; 
+            display: none; /* Hidden by default */
+        }
+        .spam { 
+            background-color: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb; 
+            display: block !important; 
+        }
+        .ham { 
+            background-color: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb; 
+            display: block !important; 
+        }
+        .loading { 
+            background-color: #e2e3e5;
+            color: #383d41; 
+            border: 1px solid #d6d8db;
+            display: block !important; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>AI Spam Detector</h2>
+        <p>Paste the content of an email below to analyze it using your fine-tuned Transformer model.</p>
+        
+        <textarea id="emailInput" placeholder="Dear user, you have been selected to win a million dollars..."></textarea>
+        <button onclick="analyzeEmail()" id="checkBtn">Check Email</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        async function analyzeEmail() {
+            const textInput = document.getElementById('emailInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const btn = document.getElementById('checkBtn');
+
+            // Basic validation
+            if (!textInput) {
+                alert("Please paste some text first.");
+                return;
+            }
+
+            // Set loading state
+            resultDiv.className = 'loading';
+            resultDiv.innerText = 'Running model inference...';
+            btn.disabled = true;
+            btn.innerText = 'Analyzing...';
+
+            try {
+                // Send a POST request to your Flask backend
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: textInput })
+                });
+
+                const data = await response.json();
+
+                // Check the prediction returned from app.py
+                if (data.prediction === "Spam") {
+                    resultDiv.className = 'spam';
+                    resultDiv.innerHTML = '🚨 <strong>WARNING:</strong> This looks like SPAM.';
+                } else {
+                    resultDiv.className = 'ham';
+                    resultDiv.innerHTML = '✅ <strong>SAFE:</strong> This looks like a normal email.';
+                }
+            } catch (error) {
+                resultDiv.className = 'spam';
+                resultDiv.innerText = '❌ Error: Could not connect to the Flask server. Is app.py running?';
+                console.error("Error:", error);
+            } finally {
+                // Reset button state
+                btn.disabled = false;
+                btn.innerText = 'Check Email';
+            }
+        }
+    </script>
+</body>
+</html>
